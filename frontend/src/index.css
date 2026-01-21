@@ -1,0 +1,185 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Poppins:wght@400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+
+  html {
+    @apply scroll-smooth;
+  }
+
+  body {
+    @apply bg-gray-50 text-gray-900 antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Melhorar inputs */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="tel"],
+  select,
+  textarea {
+    @apply w-full px-4 py-2.5 text-base border-2 border-gray-200 rounded-lg 
+           focus:border-primary-500 focus:ring-4 focus:ring-primary-100 
+           transition-all duration-200 outline-none
+           placeholder:text-gray-400;
+  }
+
+  input[type="text"]:disabled,
+  input[type="email"]:disabled,
+  input[type="password"]:disabled,
+  select:disabled,
+  textarea:disabled {
+    @apply bg-gray-100 cursor-not-allowed opacity-60;
+  }
+
+  /* Labels */
+  label {
+    @apply text-sm font-medium text-gray-700 mb-1.5 block;
+  }
+}
+
+@layer components {
+  /* Botões */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 px-5 py-2.5 
+           font-medium rounded-lg transition-all duration-200 
+           focus:outline-none focus:ring-4 disabled:opacity-50 
+           disabled:cursor-not-allowed;
+  }
+
+  .btn-primary {
+    @apply bg-primary-600 text-white hover:bg-primary-700 
+           focus:ring-primary-200 shadow-sm hover:shadow-md;
+  }
+
+  .btn-secondary {
+    @apply bg-white text-gray-700 border-2 border-gray-200 
+           hover:bg-gray-50 focus:ring-gray-200 shadow-sm;
+  }
+
+  .btn-danger {
+    @apply bg-danger-600 text-white hover:bg-danger-700 
+           focus:ring-danger-200 shadow-sm hover:shadow-md;
+  }
+
+  .btn-sm {
+    @apply px-4 py-2 text-sm;
+  }
+
+  .btn-lg {
+    @apply px-6 py-3 text-lg;
+  }
+
+  /* Cards */
+  .card {
+    @apply bg-white rounded-xl shadow-sm border border-gray-200 
+           transition-all duration-200;
+  }
+
+  .card-hover {
+    @apply hover:shadow-md hover:border-gray-300;
+  }
+
+  /* Form Groups */
+  .form-group {
+    @apply space-y-1.5;
+  }
+
+  .form-error {
+    @apply text-sm text-danger-600 mt-1;
+  }
+
+  /* Auth Container */
+  .auth-container {
+    @apply min-h-screen bg-gradient-to-br from-primary-50 via-white to-secondary-50 
+           flex items-center justify-center p-4;
+  }
+
+  .auth-card {
+    @apply bg-white rounded-2xl shadow-xl border border-gray-200 
+           w-full max-w-md p-8 space-y-6;
+  }
+
+  /* Logo */
+  .logo {
+    @apply flex items-center gap-3 text-2xl font-bold;
+  }
+
+  .logo-icon {
+    @apply w-10 h-10 bg-gradient-to-br from-primary-500 to-primary-700 
+           rounded-xl flex items-center justify-center text-white text-xl 
+           shadow-lg shadow-primary-500/30;
+  }
+
+  .logo-text {
+    @apply bg-gradient-to-r from-primary-600 to-secondary-600 
+           bg-clip-text text-transparent;
+  }
+
+  /* Divider */
+  .divider {
+    @apply flex items-center gap-4 my-6;
+  }
+
+  .divider::before,
+  .divider::after {
+    @apply flex-1 h-px bg-gray-200;
+    content: '';
+  }
+
+  .divider-text {
+    @apply text-sm text-gray-500 font-medium;
+  }
+}
+
+@layer utilities {
+  /* Text Gradient */
+  .text-gradient {
+    @apply bg-gradient-to-r from-primary-600 to-secondary-600 
+           bg-clip-text text-transparent;
+  }
+
+  /* Glow Effect */
+  .glow {
+    @apply shadow-glow;
+  }
+
+  /* Animations */
+  .animate-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-in {
+    animation: slideIn 0.3s ease-out;
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+}
+
+/* Scrollbar personalizada */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-gray-100;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-gray-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-gray-400;
+}
