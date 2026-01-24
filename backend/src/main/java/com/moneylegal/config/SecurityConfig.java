@@ -26,15 +26,6 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * SecurityConfig - Configuração de Segurança Spring Security
- * 
- * Configurações:
- * - JWT Authentication
- * - CORS
- * - Endpoints públicos vs protegidos
- * - Stateless sessions
- */
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -47,30 +38,37 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .sessionManagement(session -> 
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authorizeHttpRequests(auth -> auth
-                // Endpoints públicos
-                .requestMatchers("/api/v1/auth/**").permitAll()
-                .requestMatchers("/api/v1/public/**").permitAll()
-                
-                // Actuator (apenas localmente)
-                .requestMatchers("/actuator/**").permitAll()
-                
-                // Swagger/OpenAPI
-                .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
-                
-                // WebSocket
-                .requestMatchers("/ws/**").permitAll()
-                
-                // Todos os outros precisam autenticação
-                .anyRequest().authenticated()
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+
+                        .requestMatchers("/api/v1/auth/**").permitAll()
+                        .requestMatchers("/api/v1/public/**").permitAll()
+
+                        .requestMatchers("/actuator/**").permitAll()
+
+                        // Swagger/OpenAPI
+                        .requestMatchers(
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/swagger-ui/index.html",
+                                "/webjars/**"
+                        ).permitAll()
+
+                        // IMPORTANTE: liberar o endpoint padrão de erro
+                        .requestMatchers("/error").permitAll()
+
+                        .requestMatchers("/ws/**").permitAll()
+
+                        .anyRequest().authenticated()
+                )
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
@@ -97,9 +95,11 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "https://moneylegal.com.br"
+                "http://localhost:3000",
+                "http://localhost:5173",
+                "http://192.168.100.40:3000",
+                "http://192.168.100.40:5173",
+                "https://moneylegal.app"
         ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         configuration.setAllowedHeaders(List.of("*"));

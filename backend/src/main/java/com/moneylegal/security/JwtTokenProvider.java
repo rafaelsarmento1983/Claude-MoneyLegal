@@ -1,6 +1,9 @@
 package com.moneylegal.security;
 
-import io.jsonwebtoken.*;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -11,15 +14,6 @@ import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import java.util.UUID;
 
-/**
- * JwtTokenProvider - Gerador e validador de JWT tokens
- * 
- * Responsabilidades:
- * - Gerar access tokens (15 minutos)
- * - Gerar refresh tokens (7 dias)
- * - Validar tokens
- * - Extrair claims (userId, etc)
- */
 @Component
 @Slf4j
 public class JwtTokenProvider {
@@ -28,46 +22,39 @@ public class JwtTokenProvider {
     private final long accessTokenExpiration;
     private final long refreshTokenExpiration;
 
+
     public JwtTokenProvider(
-        @Value("${jwt.secret}") String secret,
-        @Value("${jwt.expiration:900000}") long accessTokenExpiration // 15 min default
+            @Value("${jwt.secret}") String secret,
+            @Value("${jwt.expiration:900000}") long accessTokenExpiration
     ) {
-        this.secretKey = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+        byte[] keyBytes = Decoders.BASE64.decode(secret);
+        this.secretKey = Keys.hmacShaKeyFor(keyBytes);
         this.accessTokenExpiration = accessTokenExpiration;
-        this.refreshTokenExpiration = 7 * 24 * 60 * 60 * 1000L; // 7 dias
+        this.refreshTokenExpiration = 7 * 24 * 60 * 60 * 1000L;
     }
 
-    /**
-     * Gerar access token
-     */
     public String generateAccessToken(String userId) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
 
         return Jwts.builder()
-            .setSubject(userId)
-            .setIssuedAt(now)
-            .setExpiration(expiryDate)
-            .signWith(secretKey, SignatureAlgorithm.HS512)
-            .compact();
+                .subject(userId)
+                .issuedAt(now)
+                .expiration(expiryDate)
+                .signWith(secretKey, Jwts.SIG.HS512) // JJWT 0.12.x
+                .compact();
     }
 
-    /**
-     * Gerar refresh token (apenas UUID)
-     */
     public String generateRefreshToken() {
         return UUID.randomUUID().toString();
     }
 
-    /**
-     * Validar token
-     */
     public boolean validateToken(String token) {
         try {
-            Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token);
+            Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token); // valida assinatura e estrutura
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             log.error("Invalid JWT token: {}", e.getMessage());
@@ -75,31 +62,26 @@ public class JwtTokenProvider {
         }
     }
 
-    /**
-     * Extrair userId do token
-     */
     public String getUserIdFromToken(String token) {
-        Claims claims = Jwts.parserBuilder()
-            .setSigningKey(secretKey)
-            .build()
-            .parseClaimsJws(token)
-            .getBody();
+        Claims claims = Jwts.parser()
+                .verifyWith(secretKey)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
 
         return claims.getSubject();
     }
 
-    /**
-     * Verificar se token está expirado
-     */
     public boolean isTokenExpired(String token) {
         try {
-            Claims claims = Jwts.parserBuilder()
-                .setSigningKey(secretKey)
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+            Claims claims = Jwts.parser()
+                    .verifyWith(secretKey)
+                    .build()
+                    .parseSignedClaims(token)
+                    .getPayload();
 
-            return claims.getExpiration().before(new Date());
+            Date exp = claims.getExpiration();
+            return exp != null && exp.before(new Date());
         } catch (JwtException e) {
             return true;
         }

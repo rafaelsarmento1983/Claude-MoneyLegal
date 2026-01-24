@@ -127,9 +127,7 @@ public class TenantMember {
         MANAGER(3),
         ADMIN(4),
         OWNER(5);
-
         private final int level;
-
         MemberRole(int level) {
             this.level = level;
         }

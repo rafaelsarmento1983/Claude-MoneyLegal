@@ -1,14 +1,15 @@
 server:
   port: 8080
+  address: 0.0.0.0
 
 spring:
   application:
     name: money-legal
   
   datasource:
-    url: jdbc:mysql://localhost:3306/moneylegal_dev
+    url: jdbc:mysql://localhost:3306/moneylegal_dev?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC&createDatabaseIfNotExist=true
     username: root
-    password: moneylegal_2026
+    password:
     driver-class-name: com.mysql.cj.jdbc.Driver
   
   jpa:
@@ -19,6 +20,9 @@ spring:
       hibernate:
         dialect: org.hibernate.dialect.MySQL8Dialect
         format_sql: true
+        jdbc:
+          time_zone: UTC
+        globally_quoted_identifiers: false
   
   flyway:
     enabled: true
@@ -26,8 +30,14 @@ spring:
     locations: classpath:db/migration
 
 jwt:
-  secret: moneylegal-secret-key-change-in-production-2026
+  secret: i+TaPsavc6K5ogoYGC432AdQBrDH3L4YCc2/odYywBu3WlpdO7f9F9hsAfG+0JWA8qHNb69Xy0kp4xGMkMokUQ==
   expiration: 900000
+
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
 
 logging:
   level:

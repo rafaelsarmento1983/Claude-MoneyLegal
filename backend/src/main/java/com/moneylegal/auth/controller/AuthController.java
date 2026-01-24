@@ -1,7 +1,7 @@
 package com.moneylegal.auth.controller;
 
 import com.moneylegal.auth.dto.*;
-import com.moneylegal.auth.service.AuthService;
+import com.moneylegal.auth.service.*;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * AuthController - Endpoints de Autenticação
- * 
+ *
  * Endpoints:
  * POST /api/v1/auth/register - Cadastro
  * POST /api/v1/auth/login - Login
@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthService authService;
+    private final UserService userService;
 
     /**
      * POST /api/v1/auth/register
@@ -115,5 +116,44 @@ public class AuthController {
         log.info("POST /api/v1/auth/resend-verification - email: {}", email);
         authService.resendVerificationEmail(email);
         return ResponseEntity.ok().build();
+    }
+
+    /**
+     * ⭐ NOVO: GET /api/v1/auth/check-email
+     * Verificar se email já está cadastrado (para validação em tempo real no frontend)
+     *
+     * @param email Email a ser verificado
+     * @return EmailCheckResponseDTO com exists (boolean) e message (string)
+     */
+    @GetMapping("/check-email")
+    public ResponseEntity<EmailCheckResponseDTO> checkEmail(@RequestParam String email) {
+        log.info("GET /api/v1/auth/check-email - email: {}", email);
+
+        // Validar formato do email
+        if (email == null || email.trim().isEmpty()) {
+            EmailCheckResponseDTO response = EmailCheckResponseDTO.builder()
+                    .exists(false)
+                    .message("Email inválido")
+                    .build();
+            return ResponseEntity.badRequest().body(response);
+        }
+
+        // Normalizar email (lowercase)
+        String normalizedEmail = email.trim().toLowerCase();
+
+        // Verificar se existe no banco (case insensitive)
+        boolean exists = userService.existsByEmail(normalizedEmail);
+
+        // Construir resposta
+        EmailCheckResponseDTO response = EmailCheckResponseDTO.builder()
+                .exists(exists)
+                .message(exists
+                        ? "Identificamos que este e-mail já possui cadastro."
+                        : "Este e-mail pode ser utilizado para cadastro.")
+                .build();
+
+        log.debug("Email check result - email: {}, exists: {}", normalizedEmail, exists);
+
+        return ResponseEntity.ok(response);
     }
 }

@@ -1,82 +1,56 @@
 package com.moneylegal.tenant.repository;
 
 import com.moneylegal.tenant.entity.Tenant;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
-/**
- * Repository para Tenant
- */
 @Repository
 public interface TenantRepository extends JpaRepository<Tenant, String> {
-
-    /**
-     * Buscar tenant por slug
-     */
+    
     Optional<Tenant> findBySlug(String slug);
-
-    /**
-     * Verificar se slug existe
-     */
+    
     boolean existsBySlug(String slug);
-
+    
     /**
-     * Buscar tenants do owner
+     * Buscar todos os tenants ativos (para listagem pública)
      */
-    List<Tenant> findByOwnerId(String ownerId);
-
+    Page<Tenant> findAllByIsActiveTrue(Pageable pageable);
+    
     /**
-     * Buscar tenants ativos
+     * Buscar tenants ativos com filtro de nome ou slug
      */
-    List<Tenant> findByIsActiveTrue();
-
+    @Query("SELECT t FROM Tenant t WHERE t.isActive = true AND " +
+           "(LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(t.slug) LIKE LOWER(CONCAT('%', :search, '%')))")
+    Page<Tenant> findAllActiveByNameOrSlug(@Param("search") String search, Pageable pageable);
+    
     /**
-     * Buscar tenants por tipo
+     * Buscar tenants do usuário com filtro de nome ou slug
      */
-    List<Tenant> findByType(Tenant.TenantType type);
-
+    @Query("SELECT DISTINCT t FROM Tenant t " +
+           "JOIN TenantMember m ON m.tenantId = t.id " +
+           "WHERE m.userId = :userId AND m.isActive = true AND t.isActive = true AND " +
+           "(LOWER(t.name) LIKE LOWER(CONCAT('%', :search, '%')) OR " +
+           "LOWER(t.slug) LIKE LOWER(CONCAT('%', :search, '%'))) " +
+           "ORDER BY t.createdAt DESC")
+    List<Tenant> findByUserIdAndNameOrSlug(
+        @Param("userId") String userId, 
+        @Param("search") String search
+    );
+    
     /**
-     * Buscar tenants por plano
+     * Buscar todos os tenants do usuário
      */
-    List<Tenant> findByPlan(Tenant.TenantPlan plan);
-
-    /**
-     * Buscar tenants com assinatura ativa
-     */
-    @Query("SELECT t FROM Tenant t WHERE t.subscriptionStatus = 'ACTIVE' AND (t.subscriptionExpiresAt IS NULL OR t.subscriptionExpiresAt > :now)")
-    List<Tenant> findWithActiveSubscription(@Param("now") LocalDateTime now);
-
-    /**
-     * Buscar tenants com assinatura expirada
-     */
-    @Query("SELECT t FROM Tenant t WHERE t.subscriptionStatus = 'ACTIVE' AND t.subscriptionExpiresAt < :now")
-    List<Tenant> findWithExpiredSubscription(@Param("now") LocalDateTime now);
-
-    /**
-     * Buscar tenants por nome (like)
-     */
-    @Query("SELECT t FROM Tenant t WHERE LOWER(t.name) LIKE LOWER(CONCAT('%', :name, '%'))")
-    List<Tenant> searchByName(@Param("name") String name);
-
-    /**
-     * Contar tenants por tipo
-     */
-    long countByType(Tenant.TenantType type);
-
-    /**
-     * Contar tenants por plano
-     */
-    long countByPlan(Tenant.TenantPlan plan);
-
-    /**
-     * Buscar tenants criados recentemente
-     */
-    @Query("SELECT t FROM Tenant t WHERE t.createdAt >= :since ORDER BY t.createdAt DESC")
-    List<Tenant> findRecentlyCreated(@Param("since") LocalDateTime since);
+    @Query("SELECT DISTINCT t FROM Tenant t " +
+           "JOIN TenantMember m ON m.tenantId = t.id " +
+           "WHERE m.userId = :userId AND m.isActive = true AND t.isActive = true " +
+           "ORDER BY t.createdAt DESC")
+    List<Tenant> findByUserIdOrderByCreatedAtDesc(@Param("userId") String userId);
 }

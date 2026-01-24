@@ -102,16 +102,16 @@ public class AuthServiceImpl implements AuthService {
 
         // Buscar usuário
         User user = userRepository.findByEmailIgnoreCase(request.getEmail())
-            .orElseThrow(() -> new UnauthorizedException("Email ou senha inválidos"));
+            .orElseThrow(() -> new UnauthorizedException("Por favor, verifique seus dados de acesso e tente novamente."));
 
         // Verificar senha
         if (!passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
-            throw new UnauthorizedException("Email ou senha inválidos");
+            throw new UnauthorizedException("Por favor, verifique seus dados de acesso e tente novamente.");
         }
 
         // Verificar se usuário está ativo
         if (!user.getIsActive()) {
-            throw new UnauthorizedException("Usuário inativo");
+            throw new UnauthorizedException("Este usuário pode estar inativo ou bloqueado. Tente novamente mais tarde.");
         }
 
         // Atualizar last login

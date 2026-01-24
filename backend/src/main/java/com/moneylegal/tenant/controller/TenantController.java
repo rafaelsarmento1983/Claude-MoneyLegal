@@ -5,6 +5,7 @@ import com.moneylegal.tenant.service.TenantService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -141,5 +142,38 @@ public class TenantController {
         
         TenantSettingsDTO settings = tenantService.updateSettings(id, request, userId);
         return ResponseEntity.ok(settings);
+    }
+
+    /**
+     * GET /api/v1/tenants/public
+     * Buscar todos os tenants públicos (paginado)
+     * Endpoint público - não requer autenticação
+     */
+    @GetMapping("/public")
+    public ResponseEntity<Page<TenantResponseDTO>> getAllPublicTenants(
+        @RequestParam(defaultValue = "0") int page,
+        @RequestParam(defaultValue = "10") int size,
+        @RequestParam(required = false) String search
+    ) {
+        log.info("GET /api/v1/tenants/public - page: {}, size: {}, search: {}", page, size, search);
+        
+        Page<TenantResponseDTO> tenants = tenantService.getAllPublicTenants(page, size, search);
+        return ResponseEntity.ok(tenants);
+    }
+
+    /**
+     * GET /api/v1/tenants/search
+     * Buscar tenants do usuário com filtro
+     */
+    @GetMapping("/search")
+    public ResponseEntity<List<TenantResponseDTO>> searchUserTenants(
+        @RequestParam String q,
+        Authentication authentication
+    ) {
+        String userId = authentication.getName();
+        log.info("GET /api/v1/tenants/search - userId: {}, query: {}", userId, q);
+        
+        List<TenantResponseDTO> tenants = tenantService.searchUserTenants(userId, q);
+        return ResponseEntity.ok(tenants);
     }
 }

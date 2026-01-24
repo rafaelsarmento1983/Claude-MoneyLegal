@@ -14,6 +14,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class MoneyLegalApplication {
 
     public static void main(String[] args) {
-        SpringApplication.run(MoneyLegalApplication.java, args);
+        SpringApplication.run(MoneyLegalApplication.class, args);
     }
 }
