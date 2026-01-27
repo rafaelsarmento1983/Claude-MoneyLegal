@@ -19,32 +19,32 @@ public interface AuthService {
     /**
      * Registrar novo usuário
      */
-    AuthResponseDTO register(RegisterRequestDTO request);
+    AuthResponse register(RegisterRequest request);
 
     /**
      * Login com email e senha
      */
-    AuthResponseDTO login(LoginRequestDTO request);
+    AuthResponse login(LoginRequest request);
 
     /**
      * Login com Google OAuth
      */
-    AuthResponseDTO loginWithGoogle(String googleToken);
+    AuthResponse loginWithGoogle(String googleToken);
 
     /**
      * Login com Facebook OAuth
      */
-    AuthResponseDTO loginWithFacebook(String facebookToken);
+    AuthResponse loginWithFacebook(String facebookToken);
 
     /**
      * Login com Apple OAuth
      */
-    AuthResponseDTO loginWithApple(String appleToken);
+    AuthResponse loginWithApple(String appleToken);
 
     /**
      * Refresh access token
      */
-    AuthResponseDTO refreshToken(RefreshTokenRequestDTO request);
+    AuthResponse refreshToken(RefreshTokenRequest request);
 
     /**
      * Logout (revogar refresh token)
@@ -59,17 +59,17 @@ public interface AuthService {
     /**
      * Solicitar recuperação de senha
      */
-    void forgotPassword(ForgotPasswordRequestDTO request);
+    void forgotPassword(ForgotPasswordRequest request);
 
     /**
      * Resetar senha com token
      */
-    void resetPassword(ResetPasswordRequestDTO request);
+    void resetPassword(ResetPasswordRequest request);
 
     /**
      * Verificar email com token
      */
-    void verifyEmail(VerifyEmailRequestDTO request);
+    void verifyEmail(VerifyEmailRequest request);
 
     /**
      * Reenviar email de verificação

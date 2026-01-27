@@ -1,25 +1,22 @@
 package com.moneylegal.auth.dto;
 
-import jakarta.validation.constraints.*;
-import lombok.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class RegisterRequestDTO {
-    @NotBlank(message = "Nome é obrigatório")
-    @Size(min = 3, max = 100)
-    private String name;
+public class LoginRequest {
 
     @NotBlank(message = "Email é obrigatório")
     @Email(message = "Email inválido")
     private String email;
 
-    @Size(max = 20)
-    private String phone;
-
     @NotBlank(message = "Senha é obrigatória")
-    @Size(min = 8, max = 100)
     private String password;
 }

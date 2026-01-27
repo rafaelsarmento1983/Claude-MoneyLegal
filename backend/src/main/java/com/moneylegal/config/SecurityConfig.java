@@ -96,8 +96,11 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList(
                 "http://localhost:3000",
+                "http://localhost:3001",
                 "http://localhost:5173",
                 "http://192.168.100.40:3000",
+                "http://192.168.100.40:3001",
+                "http://192.168.100.52:3000",
                 "http://192.168.100.40:5173",
                 "https://moneylegal.app"
         ));

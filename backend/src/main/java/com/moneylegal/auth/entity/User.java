@@ -83,6 +83,15 @@ public class User {
     private String oauthProviderId;
 
     /**
+     * OTP/Reset
+     */
+    @Column(name = "reset_password_code", length = 6)
+    private String resetPasswordCode;
+
+    @Column(name = "reset_password_code_expires_at")
+    private LocalDateTime resetPasswordCodeExpiresAt;
+
+    /**
      * Lifecycle hooks
      */
     @PreUpdate
@@ -120,4 +129,13 @@ public class User {
     public boolean canLogin() {
         return isActive && emailVerified;
     }
+
+    // Getters e Setters
+    public String getResetPasswordCode() { return resetPasswordCode; }
+
+    public void setResetPasswordCode(String resetPasswordCode) { this.resetPasswordCode = resetPasswordCode; }
+
+    public LocalDateTime getResetPasswordCodeExpiresAt() { return resetPasswordCodeExpiresAt; }
+
+    public void setResetPasswordCodeExpiresAt(LocalDateTime resetPasswordCodeExpiresAt) { this.resetPasswordCodeExpiresAt = resetPasswordCodeExpiresAt; }
 }

@@ -19,7 +19,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.UUID;
 
 /**
@@ -42,7 +41,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponseDTO register(RegisterRequestDTO request) {
+    public AuthResponse register(RegisterRequest request) {
         log.info("Registrando novo usuário: {}", request.getEmail());
 
         // Validar se email já existe
@@ -97,7 +96,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponseDTO login(LoginRequestDTO request) {
+    public AuthResponse login(LoginRequest request) {
         log.info("Login attempt: {}", request.getEmail());
 
         // Buscar usuário
@@ -141,7 +140,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponseDTO loginWithGoogle(String googleToken) {
+    public AuthResponse loginWithGoogle(String googleToken) {
         // TODO: Implementar OAuth Google
         // 1. Validar token com Google API
         // 2. Extrair dados (email, nome, foto)
@@ -152,21 +151,21 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public AuthResponseDTO loginWithFacebook(String facebookToken) {
+    public AuthResponse loginWithFacebook(String facebookToken) {
         // TODO: Implementar OAuth Facebook
         throw new UnsupportedOperationException("Facebook OAuth não implementado ainda");
     }
 
     @Override
     @Transactional
-    public AuthResponseDTO loginWithApple(String appleToken) {
+    public AuthResponse loginWithApple(String appleToken) {
         // TODO: Implementar OAuth Apple
         throw new UnsupportedOperationException("Apple OAuth não implementado ainda");
     }
 
     @Override
     @Transactional
-    public AuthResponseDTO refreshToken(RefreshTokenRequestDTO request) {
+    public AuthResponse refreshToken(RefreshTokenRequest request) {
         log.info("Refresh token request");
 
         // Validar refresh token
@@ -231,7 +230,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void forgotPassword(ForgotPasswordRequestDTO request) {
+    public void forgotPassword(ForgotPasswordRequest request) {
         log.info("Forgot password request: {}", request.getEmail());
 
         // Buscar usuário (não retornar erro se não existir por segurança)
@@ -250,7 +249,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void resetPassword(ResetPasswordRequestDTO request) {
+    public void resetPassword(ResetPasswordRequest request) {
         log.info("Reset password request");
 
         // TODO: Validar token (buscar na tabela PasswordReset)
@@ -261,7 +260,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     @Transactional
-    public void verifyEmail(VerifyEmailRequestDTO request) {
+    public void verifyEmail(VerifyEmailRequest request) {
         log.info("Verify email request");
 
         // TODO: Validar token
@@ -328,19 +327,19 @@ public class AuthServiceImpl implements AuthService {
         return slug;
     }
 
-    private AuthResponseDTO buildAuthResponse(
+    private AuthResponse buildAuthResponse(
         User user, 
         String accessToken, 
         String refreshToken, 
         Tenant tenant,
         TenantMember.MemberRole role
     ) {
-        return AuthResponseDTO.builder()
+        return AuthResponse.builder()
             .accessToken(accessToken)
             .refreshToken(refreshToken)
             .tokenType("Bearer")
             .expiresIn((long) ACCESS_TOKEN_EXPIRATION_MINUTES * 60) // segundos
-            .user(AuthResponseDTO.UserDTO.builder()
+            .user(AuthResponse.UserDTO.builder()
                 .id(user.getId())
                 .name(user.getName())
                 .email(user.getEmail())
@@ -349,7 +348,7 @@ public class AuthServiceImpl implements AuthService {
                 .emailVerified(user.getEmailVerified())
                 .phoneVerified(user.getPhoneVerified())
                 .build())
-            .defaultTenant(AuthResponseDTO.TenantDTO.builder()
+            .defaultTenant(AuthResponse.TenantDTO.builder()
                 .id(tenant.getId())
                 .name(tenant.getName())
                 .slug(tenant.getSlug())

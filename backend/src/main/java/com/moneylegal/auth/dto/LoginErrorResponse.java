@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class LoginErrorResponseDTO {
+public class LoginErrorResponse {
     private String message;
     private String code;   // opcional (ex: INVALID_CREDENTIALS)
 }

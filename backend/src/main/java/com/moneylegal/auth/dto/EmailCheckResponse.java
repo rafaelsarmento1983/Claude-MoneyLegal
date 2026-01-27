@@ -12,7 +12,7 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class EmailCheckResponseDTO {
+public class EmailCheckResponse {
 
     /**
      * Se o email existe no sistema

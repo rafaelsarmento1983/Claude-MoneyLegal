@@ -35,9 +35,9 @@ public class AuthController {
      * Cadastrar novo usuário
      */
     @PostMapping("/register")
-    public ResponseEntity<AuthResponseDTO> register(@Valid @RequestBody RegisterRequestDTO request) {
+    public ResponseEntity<AuthResponse> register(@Valid @RequestBody RegisterRequest request) {
         log.info("POST /api/v1/auth/register - email: {}", request.getEmail());
-        AuthResponseDTO response = authService.register(request);
+        AuthResponse response = authService.register(request);
         return ResponseEntity.ok(response);
     }
 
@@ -46,9 +46,9 @@ public class AuthController {
      * Login com email e senha
      */
     @PostMapping("/login")
-    public ResponseEntity<AuthResponseDTO> login(@Valid @RequestBody LoginRequestDTO request) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         log.info("POST /api/v1/auth/login - email: {}", request.getEmail());
-        AuthResponseDTO response = authService.login(request);
+        AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
     }
 
@@ -57,9 +57,9 @@ public class AuthController {
      * Renovar access token
      */
     @PostMapping("/refresh")
-    public ResponseEntity<AuthResponseDTO> refreshToken(@Valid @RequestBody RefreshTokenRequestDTO request) {
+    public ResponseEntity<AuthResponse> refreshToken(@Valid @RequestBody RefreshTokenRequest request) {
         log.info("POST /api/v1/auth/refresh");
-        AuthResponseDTO response = authService.refreshToken(request);
+        AuthResponse response = authService.refreshToken(request);
         return ResponseEntity.ok(response);
     }
 
@@ -68,7 +68,7 @@ public class AuthController {
      * Fazer logout (revogar refresh token)
      */
     @PostMapping("/logout")
-    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequestDTO request) {
+    public ResponseEntity<Void> logout(@Valid @RequestBody RefreshTokenRequest request) {
         log.info("POST /api/v1/auth/logout");
         authService.logout(request.getRefreshToken());
         return ResponseEntity.noContent().build();
@@ -79,7 +79,7 @@ public class AuthController {
      * Solicitar recuperação de senha
      */
     @PostMapping("/forgot-password")
-    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequestDTO request) {
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         log.info("POST /api/v1/auth/forgot-password - email: {}", request.getEmail());
         authService.forgotPassword(request);
         return ResponseEntity.ok().build();
@@ -90,7 +90,7 @@ public class AuthController {
      * Resetar senha com token
      */
     @PostMapping("/reset-password")
-    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequestDTO request) {
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
         log.info("POST /api/v1/auth/reset-password");
         authService.resetPassword(request);
         return ResponseEntity.ok().build();
@@ -101,7 +101,7 @@ public class AuthController {
      * Verificar email com token
      */
     @PostMapping("/verify-email")
-    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequestDTO request) {
+    public ResponseEntity<Void> verifyEmail(@Valid @RequestBody VerifyEmailRequest request) {
         log.info("POST /api/v1/auth/verify-email");
         authService.verifyEmail(request);
         return ResponseEntity.ok().build();
@@ -126,12 +126,12 @@ public class AuthController {
      * @return EmailCheckResponseDTO com exists (boolean) e message (string)
      */
     @GetMapping("/check-email")
-    public ResponseEntity<EmailCheckResponseDTO> checkEmail(@RequestParam String email) {
+    public ResponseEntity<EmailCheckResponse> checkEmail(@RequestParam String email) {
         log.info("GET /api/v1/auth/check-email - email: {}", email);
 
         // Validar formato do email
         if (email == null || email.trim().isEmpty()) {
-            EmailCheckResponseDTO response = EmailCheckResponseDTO.builder()
+            EmailCheckResponse response = EmailCheckResponse.builder()
                     .exists(false)
                     .message("Email inválido")
                     .build();
@@ -145,7 +145,7 @@ public class AuthController {
         boolean exists = userService.existsByEmail(normalizedEmail);
 
         // Construir resposta
-        EmailCheckResponseDTO response = EmailCheckResponseDTO.builder()
+        EmailCheckResponse response = EmailCheckResponse.builder()
                 .exists(exists)
                 .message(exists
                         ? "Identificamos que este e-mail já possui cadastro."

@@ -7,7 +7,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class VerifyEmailRequestDTO {
+public class VerifyEmailRequest {
     @NotBlank(message = "Token é obrigatório")
     private String token;
 }

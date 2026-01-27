@@ -6,7 +6,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AuthResponseDTO {
+public class AuthResponse {
     private String accessToken;
     private String refreshToken;
     private String tokenType;
