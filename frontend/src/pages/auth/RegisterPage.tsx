@@ -1,237 +1,381 @@
-import { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Link } from 'react-router-dom';
-import { Eye, EyeOff, DollarSign, CheckCircle2 } from 'lucide-react';
-import { useRegister } from '@/hooks/useRegister';
+import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
+import {
+  Mail,
+  User,
+  Lock,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  ArrowLeft,
+  Loader2,
+  CheckCircle,
+  XCircle,
+  LogIn,
+} from "lucide-react";
 
-const registerSchema = z
-  .object({
-    name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres'),
-    email: z.string().email('Email inválido'),
-    phone: z.string().min(10, 'Telefone inválido').optional().or(z.literal('')),
-    password: z
-      .string()
-      .min(8, 'Senha deve ter no mínimo 8 caracteres')
-      .regex(/[A-Z]/, 'Senha deve conter ao menos uma letra maiúscula')
-      .regex(/[0-9]/, 'Senha deve conter ao menos um número'),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'As senhas não conferem',
-    path: ['confirmPassword'],
-  });
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
+import { useAuthStore } from "@/store/authStore";
+import { authService } from "@/services/authService";
+import { useEmailCheck } from "@/hooks/useEmailCheck";
+import logo from "@/assets/logo.png";
 
-type RegisterFormData = z.infer<typeof registerSchema>;
+type Step = "name" | "email" | "password";
 
-export function RegisterPage() {
-  const registerMutation = useRegister();
+const ease = [0.16, 1, 0.3, 1] as const;
+
+const fadeSlide = {
+  initial: { opacity: 0, y: 16, filter: "blur(6px)" },
+  animate: { opacity: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.55, ease } },
+  exit: { opacity: 0, y: -10, filter: "blur(6px)", transition: { duration: 0.28, ease } },
+};
+
+function isValidEmail(email: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+}
+
+export const RegisterPage: React.FC = () => {
+  const navigate = useNavigate();
+  const { setAuth, isAuthenticated } = useAuthStore();
+
+  const [step, setStep] = useState<Step>("name");
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const {
-    register,
-    handleSubmit,
-    watch,
-    formState: { errors },
-  } = useForm<RegisterFormData>({
-    resolver: zodResolver(registerSchema),
+  const [data, setData] = useState({
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    termsAccepted: false,
   });
 
-  const password = watch('password', '');
+  useEffect(() => {
+    if (isAuthenticated) navigate("/dashboard", { replace: true });
+  }, [isAuthenticated, navigate]);
 
-  const passwordRequirements = [
-    { met: password.length >= 8, text: 'Mínimo 8 caracteres' },
-    { met: /[A-Z]/.test(password), text: 'Uma letra maiúscula' },
-    { met: /[0-9]/.test(password), text: 'Um número' },
-  ];
+  const emailValid = useMemo(() => isValidEmail(data.email), [data.email]);
 
-  const onSubmit = (data: RegisterFormData) => {
-    registerMutation.mutate({
-      name: data.name,
-      email: data.email,
-      phone: data.phone || undefined,
-      password: data.password,
-    });
+  const emailCheck = useEmailCheck({
+    email: data.email,
+    enabled: true,
+    debounceMs: 500,
+    isValidEmail,
+    checkEmailAvailability: (email) => authService.checkEmailAvailability(email),
+    invalidEmailMessage: "Digite um e-mail válido.",
+    checkingMessage: "Verificando e-mail...",
+    errorMessage: "Não foi possível verificar agora.",
+    dedupeNotify: true,
+  });
+
+  const emailAvailable = emailCheck.status === "available";
+  const emailExists = emailCheck.status === "exists";
+  const emailChecking = emailCheck.status === "checking";
+
+  const passwordRequirements = useMemo(
+    () => [
+      { label: "Mínimo 8 caracteres", met: data.password.length >= 8 },
+      { label: "Uma letra maiúscula", met: /[A-Z]/.test(data.password) },
+      { label: "Uma letra minúscula", met: /[a-z]/.test(data.password) },
+      { label: "Um número", met: /[0-9]/.test(data.password) },
+      { label: "As senhas coincidem", met: data.password === data.confirmPassword && !!data.password },
+    ],
+    [data.password, data.confirmPassword]
+  );
+
+  const allPasswordOk = passwordRequirements.every((r) => r.met);
+
+  const handleChange = (field: string, value: string | boolean) => {
+    setData((p) => ({ ...p, [field]: value }));
+    if (error) setError(null);
+    if (field === "email") emailCheck.reset();
+  };
+
+  const handleSubmit = async () => {
+    if (!allPasswordOk || !data.termsAccepted) return;
+
+    setIsLoading(true);
+    try {
+      const res = await authService.register({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      });
+
+      setAuth(res.user, res.tenant, res.accessToken, res.refreshToken);
+      navigate("/dashboard", { replace: true });
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Erro ao criar conta.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card animate-scale-in" style={{ maxWidth: '520px' }}>
-        {/* Logo e Título */}
-        <div className="text-center space-y-2">
-          <div className="logo justify-center">
-            <div className="logo-icon">
-              <DollarSign className="w-6 h-6" />
-            </div>
-            <span className="logo-text">Money Legal</span>
+    <div className="min-h-screen w-full flex items-center justify-center p-6 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-[var(--color-primary-blue-10)] via-white to-[var(--color-secondary-blue-10)]" />
+
+      <div className="relative z-10 w-full max-w-[520px] rounded-[28px] bg-white shadow-2xl border border-neutral-200/70">
+        <div className="px-8 sm:px-12 pb-10">
+          <div className="flex justify-center">
+            <img src={logo} alt="Logo" className="w-24 h-24 object-contain" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-900">Criar conta grátis</h2>
-          <p className="text-sm text-gray-600">
-            Já tem uma conta?{' '}
-            <Link
-              to="/login"
-              className="font-semibold text-primary-600 hover:text-primary-700 transition-colors"
-            >
-              Entrar
-            </Link>
+
+          <h1 className="text-center text-3xl sm:text-[34px] font-extrabold text-neutral-900">
+            Money Legal
+          </h1>
+
+          <p className="mt-2 text-center text-[15px] font-medium text-neutral-500">
+            Crie sua conta em poucos passos.
           </p>
-        </div>
 
-        {/* Formulário */}
-        <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
-          {/* Nome */}
-          <div className="form-group">
-            <label htmlFor="name">Nome completo</label>
-            <input
-              id="name"
-              type="text"
-              autoComplete="name"
-              placeholder="João Silva"
-              {...register('name')}
-              className={errors.name ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-100' : ''}
-            />
-            {errors.name && (
-              <p className="form-error">{errors.name.message}</p>
-            )}
+          <div className="mt-6 flex items-center justify-center gap-2">
+            <StepDot active={step === "name"} />
+            <div className="w-10 h-[2px] bg-neutral-200" />
+            <StepDot active={step === "email"} />
+            <div className="w-10 h-[2px] bg-neutral-200" />
+            <StepDot active={step === "password"} />
           </div>
 
-          {/* Email */}
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
-            <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              placeholder="seu@email.com"
-              {...register('email')}
-              className={errors.email ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-100' : ''}
-            />
-            {errors.email && (
-              <p className="form-error">{errors.email.message}</p>
-            )}
-          </div>
-
-          {/* Telefone */}
-          <div className="form-group">
-            <label htmlFor="phone">Telefone (opcional)</label>
-            <input
-              id="phone"
-              type="tel"
-              autoComplete="tel"
-              placeholder="(11) 98765-4321"
-              {...register('phone')}
-              className={errors.phone ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-100' : ''}
-            />
-            {errors.phone && (
-              <p className="form-error">{errors.phone.message}</p>
-            )}
-          </div>
-
-          {/* Senha */}
-          <div className="form-group">
-            <label htmlFor="password">Senha</label>
-            <div className="relative">
-              <input
-                id="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                placeholder="••••••••"
-                {...register('password')}
-                className={errors.password ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-100 pr-12' : 'pr-12'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
+          {error && (
+            <div className="mt-6 rounded-xl border border-danger-200 bg-danger-50 p-3 text-sm text-danger-700">
+              {error}
             </div>
+          )}
 
-            {/* Requisitos da senha */}
-            {password && (
-              <div className="mt-2 space-y-1">
-                {passwordRequirements.map((req, index) => (
-                  <div key={index} className="flex items-center gap-2 text-xs">
-                    <CheckCircle2
-                      className={`w-4 h-4 ${
-                        req.met ? 'text-success-600' : 'text-gray-300'
-                      }`}
-                    />
-                    <span
-                      className={req.met ? 'text-success-600' : 'text-gray-500'}
-                    >
-                      {req.text}
-                    </span>
+          <div className="mt-6">
+            <AnimatePresence mode="wait">
+              {step === "name" && (
+                <motion.div {...fadeSlide} className="space-y-4">
+
+                  <Input
+                    type="text"
+                    placeholder="Nome completo"
+                    value={data.name}
+                    onChange={(e) => handleChange("name", e.target.value)}
+                    required
+                    customRounded="rounded-xl"
+                    customBorder="border-2 border-gray-200"
+                    customBg="bg-white"
+                    leftIcon={<User className="w-5 h-5" />}
+                  />
+
+                  <Actions
+                    onNext={() => setStep("email")}
+                    canNext={data.name.trim().length >= 3}
+                    onBack={() => navigate("/auth")}
+                  />
+                </motion.div>
+              )}
+
+              {step === "email" && (
+                <motion.div {...fadeSlide} className="space-y-4">
+
+                  <Input
+                    type="email"
+                    placeholder="Seu e-mail"
+                    value={data.email}
+                    onChange={(e) => handleChange("email", e.target.value)}
+                    required
+                    customRounded="rounded-xl"
+                    customBorder="border-2 border-gray-200"
+                    customBg="bg-white"
+                    leftIcon={<Mail className="w-5 h-5" />}
+                    rightIcon={emailChecking ? <Loader2 className="animate-spin" /> : undefined}
+                    error={emailExists ? "E-mail já cadastrado." : undefined}
+                    success={emailAvailable ? "E-mail disponível." : undefined}
+                  />
+
+                  {emailExists && (
+                    <div className="rounded-2xl border border-neutral-200/70 bg-neutral-50 p-4">
+                      <div className="text-sm font-semibold text-neutral-900">
+                        Não é possível cadastrar este e-mail.
+                      </div>
+                      <div className="text-sm font-medium text-neutral-600 mt-1">
+                        Encontramos uma conta associada a este e-mail. Faça login para continuar.
+                      </div>
+                      <div className="mt-3 flex justify-center">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          tone="filledLight"
+                          className="w-full md:!w-auto md:!px-8 md:min-w-[220px]"
+                          rightIcon={<LogIn />}
+                          onClick={() => navigate("/auth")}
+                        >
+                          Acessar Conta
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  <Actions
+                    onNext={() => setStep("password")}
+                    canNext={emailAvailable}
+                    onBack={() => setStep("name")}
+                  />
+                </motion.div>
+              )}
+
+              {step === "password" && (
+                <motion.div {...fadeSlide} className="space-y-4">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={data.password}
+                    onChange={(e) => handleChange("password", e.target.value)}
+                    required
+                    customRounded="rounded-xl"
+                    customBorder="border-2 border-gray-200"
+                    customBg="bg-white"
+                    leftIcon={<Lock className="w-5 h-5" />}
+                    rightIcon={
+                      <button type="button" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff /> : <Eye />}
+                      </button>
+                    }
+                  />
+
+                  <Input
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="Confirmar senha"
+                    value={data.confirmPassword}
+                    onChange={(e) => handleChange("confirmPassword", e.target.value)}
+                    required
+                    customRounded="rounded-xl"
+                    customBorder="border-2 border-gray-200"
+                    customBg="bg-white"
+                    leftIcon={<Lock className="w-5 h-5" />}
+                    rightIcon={
+                      <button type="button" onClick={() => setShowPassword(!showPassword)}>
+                        {showPassword ? <EyeOff /> : <Eye />}
+                      </button>
+                    }
+                  />
+
+                  <div className="p-3 bg-neutral-50 rounded-xl border">
+                    {passwordRequirements.map((r) => (
+                      <div key={r.label} className="flex items-center gap-2 text-xs">
+                        {r.met ? (
+                          <CheckCircle className="w-4 h-4 text-success-600" />
+                        ) : (
+                          <XCircle className="w-4 h-4 text-neutral-400" />
+                        )}
+                        <span>{r.label}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
 
-            {errors.password && (
-              <p className="form-error">{errors.password.message}</p>
-            )}
+                  <label className="flex gap-3 pt-2 text-sm text-neutral-600">
+                    <input
+                      type="checkbox"
+                      checked={data.termsAccepted}
+                      onChange={(e) => handleChange("termsAccepted", e.target.checked)}
+                      required
+                      className="mt-1 w-4 h-4 rounded border-neutral-300 text-brand-primary-600 focus:ring-brand-primary-500"
+                    />
+                    <span className="text-sm text-neutral-600 leading-tight">
+                      Estou de acordo com os{" "}
+                      <Link
+                        to="/terms"
+                        className="font-medium text-[var(--color-primary-blue-100)] hover:text-[var(--color-secondary-blue-100)]"
+                      >
+                        Termos de Uso
+                      </Link>{" "}
+                      e a{" "}
+                      <Link
+                        to="/privacy"
+                        className="font-medium text-[var(--color-primary-blue-100)] hover:text-[var(--color-secondary-blue-100)]"
+                      >
+                        Política de Privacidade
+                      </Link>
+                    </span>
+                  </label>
+
+                  <div className="pt-2 space-y-3 md:flex md:flex-col md:items-center">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      tone="filledLight"
+                      className="w-full md:!w-auto md:!px-8 md:min-w-[220px]"
+                      onClick={handleSubmit}
+                      disabled={!allPasswordOk || !data.termsAccepted || isLoading}
+                      loading={isLoading}
+                      rightIcon={<LogIn />}
+                    >
+                      Criar conta
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      tone="plain"
+                      className="w-full md:!w-auto md:!px-8 md:min-w-[220px]"
+                      onClick={() => setStep("email")}
+                      leftIcon={<ArrowLeft className="w-4 h-4" />}
+                    >
+                      Voltar
+                    </Button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
-
-          {/* Confirmar Senha */}
-          <div className="form-group">
-            <label htmlFor="confirmPassword">Confirmar senha</label>
-            <div className="relative">
-              <input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                autoComplete="new-password"
-                placeholder="••••••••"
-                {...register('confirmPassword')}
-                className={errors.confirmPassword ? 'border-danger-500 focus:border-danger-500 focus:ring-danger-100 pr-12' : 'pr-12'}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
-              >
-                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-              </button>
-            </div>
-            {errors.confirmPassword && (
-              <p className="form-error">{errors.confirmPassword.message}</p>
-            )}
-          </div>
-
-          {/* Botão de Submit */}
-          <button
-            type="submit"
-            disabled={registerMutation.isPending}
-            className="btn btn-primary w-full btn-lg"
-          >
-            {registerMutation.isPending ? (
-              <span className="flex items-center gap-2">
-                <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                </svg>
-                Criando conta...
-              </span>
-            ) : (
-              'Criar Conta'
-            )}
-          </button>
-        </form>
-
-        {/* Footer */}
-        <p className="text-center text-xs text-gray-500 pt-4 border-t border-gray-100">
-          Ao criar uma conta, você concorda com nossos{' '}
-          <a href="#" className="text-primary-600 hover:text-primary-700">
-            Termos de Serviço
-          </a>{' '}
-          e{' '}
-          <a href="#" className="text-primary-600 hover:text-primary-700">
-            Política de Privacidade
-          </a>
-        </p>
+        </div>
       </div>
     </div>
   );
+};
+
+function StepDot({ active }: { active: boolean }) {
+  return (
+    <div
+      className={`w-3 h-3 rounded-full ${active ? "bg-neutral-900" : "bg-neutral-300"
+        }`}
+    />
+  );
 }
+
+function Actions({
+  onNext,
+  onBack,
+  canNext,
+}: {
+  onNext: () => void;
+  onBack: () => void;
+  canNext: boolean;
+}) {
+  return (
+    <div className="pt-2 space-y-3 md:flex md:flex-col md:items-center">
+      <Button
+        type="button"
+        variant="outline"
+        tone="filledLight"
+        className="w-full md:!w-auto md:!px-8 md:min-w-[220px]"
+        disabled={!canNext}
+        onClick={onNext}
+        rightIcon={<ArrowRight className="w-4 h-4" />}
+      >
+        Continuar
+      </Button>
+
+      <Button
+        type="button"
+        variant="outline"
+        tone="plain"
+        className="w-full md:!w-auto md:!px-8 md:min-w-[220px]"
+        onClick={onBack}
+        leftIcon={<ArrowLeft className="w-4 h-4" />}
+      >
+        Voltar
+      </Button>
+    </div>
+  );
+}
+
+export default RegisterPage;

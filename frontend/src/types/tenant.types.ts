@@ -1,29 +1,31 @@
+// Tenant Types
+
+export type TenantType = 'PERSONAL' | 'FAMILY' | 'BUSINESS';
+export type TenantPlan = 'FREE' | 'PREMIUM' | 'ENTERPRISE';
+export type RoleType = 'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN' | 'OWNER';
+
 export interface Tenant {
   id: string;
   name: string;
-  slug: string;
-  type: 'PERSONAL' | 'FAMILY' | 'BUSINESS';
-  plan: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
+  slug: string;  // ✅ NOVO
+  type: TenantType;
+  plan: TenantPlan;
   ownerId: string;
-  subscriptionStatus: string;
-  subscriptionExpiresAt?: string;
-  maxMembers?: number;
-  maxAccounts?: number;
-  maxBudgets?: number;
   logoUrl?: string;
   primaryColor?: string;
   isActive: boolean;
+  subscriptionStartDate?: string;
+  subscriptionEndDate?: string;
   createdAt: string;
-  currentMemberCount?: number;
-  currentAccountCount?: number;
-  currentBudgetCount?: number;
+  updatedAt: string;
   userRole?: string;
+  role?: RoleType;
 }
 
 export interface CreateTenantRequest {
   name: string;
-  type: 'PERSONAL' | 'FAMILY' | 'BUSINESS';
-  plan?: 'FREE' | 'PREMIUM' | 'ENTERPRISE';
+  type: TenantType;
+  plan: TenantPlan;
   logoUrl?: string;
   primaryColor?: string;
 }
@@ -38,33 +40,39 @@ export interface TenantMember {
   id: string;
   tenantId: string;
   userId: string;
-  userName: string;
-  userEmail: string;
-  userAvatarUrl?: string;
-  role: 'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN' | 'OWNER';
-  invitedBy?: string;
-  invitedByName?: string;
-  joinedAt: string;
+  role: RoleType;
   isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface InviteMemberRequest {
   email: string;
-  role: 'VIEWER' | 'MEMBER' | 'MANAGER' | 'ADMIN';
-  message?: string;
+  role: RoleType;
 }
 
 export interface Invitation {
   id: string;
   tenantId: string;
-  tenantName: string;
   email: string;
+  role: RoleType;
   code: string;
-  role: string;
-  invitedBy: string;
-  invitedByName?: string;
-  status: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'EXPIRED';
-  createdAt: string;
   expiresAt: string;
-  isExpired: boolean;
+  createdAt: string;
+}
+
+// ✅ NOVO: Solicitação de Acesso
+export interface AccessRequest {
+  id: string;
+  tenantId: string;
+  userId: string;
+  message: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateAccessRequestDTO {
+  tenantId: string;
+  message: string;
 }
